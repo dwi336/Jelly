@@ -5,16 +5,26 @@ android {
 
     defaultConfig {
         applicationId "org.lineageos.jelly"
-        minSdkVersion 26
+        minSdkVersion 24
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
+    }
+
+    signingConfigs {
+        release {
+            storeFile file("${System.properties['user.home']}/eclipse/DevStore")
+            storePassword "test123"
+            keyAlias "TestKey"
+            keyPassword "1234567890"
+        }
     }
 
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
 
@@ -25,6 +35,7 @@ android {
 
     lintOptions {
         disable 'RestrictedApi'
+        disable 'MissingTranslation'
     }
 
     sourceSets {
@@ -34,8 +45,8 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'androidx.appcompat:appcompat:1.1.0-alpha01'
-    implementation 'com.google.android.material:material:1.1.0-alpha02'
+    implementation 'androidx.appcompat:appcompat:1.0.2'
+    implementation 'com.google.android.material:material:1.0.0'
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'androidx.palette:palette:1.0.0'
 }
