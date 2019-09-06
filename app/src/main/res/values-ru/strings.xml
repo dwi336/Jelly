@@ -33,7 +33,7 @@
     <string name="share_title">Отправить</string>
     <string name="dismiss">Отмена</string>
     <string name="download_title">Загрузка файла</string>
-    <string name="download_message">Загрузить файл?</string>
+    <string name="download_message">Вы действительно хотите скачать %1$s?</string>
     <string name="download_positive">Загрузить</string>
     <string name="permission_error_title">Ошибка доступа</string>
     <string name="permission_error_storage">Для загрузки файлов браузеру необходим доступ к хранилищу. Предоставьте доступ для сохранения файлов из Интернета</string>
@@ -61,11 +61,6 @@
     <string name="pref_do_not_track_title">Не отслеживать</string>
     <string name="pref_do_not_track_summary">Браузер будет сообщать сайтам, что Вы не хотите, чтобы Вас отслеживали</string>
     <string name="pref_suggestions_provider">Поставщик поисковых предложений</string>
-    <string name="pref_reach_mode_title">Управление одной рукой</string>
-    <string name="pref_reach_mode_summary">Изменение расположения элементов интерфейса для удобного управления одной рукой</string>
-    <string name="pref_clear_text_traffic_title">Разрешить небезопасные веб-сайты</string>
-    <string name="pref_clear_text_traffic_summary_on">Незащищенный трафик (например, http) разрешен</string>
-    <string name="pref_clear_text_traffic_summary_off">Незащищенный трафик (например, http) не разрешен</string>
     <string name="history_title">История</string>
     <string name="history_empty">Ничего нет. История появится после просмотра страниц в интернете</string>
     <string name="history_date_format">EEEE, dd MMMM yyyy, HH:mm</string>

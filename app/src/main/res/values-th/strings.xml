@@ -18,5 +18,6 @@
     <string name="pref_reach_mode_title">โหมดการเข้าถึง</string>
     <string name="pref_reach_mode_summary">ย้ายองค์ประกอบของอินเทอร์เฟซสำหรับการใช้งานมือเดียวได้ง่ายขึ้น</string>
     <string name="pref_clear_text_traffic_title">อนุญาตเว็บไซต์ที่ไม่ปลอดภัย</string>
+    <string name="history_snackbar_item_deleted">รายการถูกลบ</string>
     <string name="history_snackbar_item_deleted_message">ย้อนกลับ</string>
 </resources>

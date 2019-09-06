@@ -18,7 +18,7 @@
     <string name="app_name">Selain</string>
     <string name="menu_new_tab">Uusi välilehti</string>
     <string name="menu_incognito">Incognito-välilehti</string>
-    <string name="menu_reload">Lataa uudellleen</string>
+    <string name="menu_reload">Lataa uudelleen</string>
     <string name="menu_fav_add">Lisää sivu kirjanmerkkeihin</string>
     <string name="menu_share">Jaa</string>
     <string name="menu_favorites">Kirjanmerkit</string>
@@ -61,14 +61,9 @@
     <string name="pref_do_not_track_title">Do Not Track</string>
     <string name="pref_do_not_track_summary">Lähetä \"Do Not Track\"-pyyntö vierailemillesi verkkosivuille</string>
     <string name="pref_suggestions_provider">Ehdotusten tarjoaja</string>
-    <string name="pref_reach_mode_title">Reach-tila</string>
-    <string name="pref_reach_mode_summary">Sijoita käyttöliittymän elementit helpottamaan yhdellä kädellä käyttöä</string>
-    <string name="pref_clear_text_traffic_title">Salli suojaamattomat verkkosivut</string>
-    <string name="pref_clear_text_traffic_summary_on">Tekstimuotoinen liikenne (kuten http) on sallittu</string>
-    <string name="pref_clear_text_traffic_summary_off">Tekstimuotoinen liikenne (kuten http) ei ole sallittu</string>
     <string name="history_title">Historia</string>
     <string name="history_empty">Täällä ei ole mitään. Selaa internetiä nähdäksesi täällä historiaa</string>
-    <string name="history_date_format">EEEE MMMM dd yyyy, HH:mm</string>
+    <string name="history_date_format">EEEE dd. MMMM yyyy, H.mm</string>
     <string name="history_delete_title">Tyhjennä historia</string>
     <string name="history_delete_message">Aiot poistaa koko historian, toimintoa ei voi kumota. Haluatko jatkaa?</string>
     <string name="history_delete_positive">Tyhjennä</string>
