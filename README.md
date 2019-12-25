@@ -6,7 +6,8 @@ Copied from https://github.com/LineageOS/android_packages_apps_Jelly/archive/lin
 
 Made small compatibility changes for android version >24
 
-Merged with upstream project on 06.09.2019
+Moved to lineage-17.0 branch.
+Merged with upstream project on 06.12.2019
 
 Feedback welcome
 
