@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The LineageOS Project
+ * Copyright (C) 2020 The LineageOS Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,14 +22,16 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.webkit.WebView;
+import android.webkit.WebView.FindListener;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.TextView.OnEditorActionListener;
 
 import org.lineageos.jelly.utils.UiUtils;
 
 public class SearchBarController implements
-        TextWatcher, TextView.OnEditorActionListener, WebView.FindListener, View.OnClickListener {
+        TextWatcher, OnEditorActionListener, FindListener, View.OnClickListener {
     private WebView mWebView;
     private EditText mEditor;
     private TextView mStatus;

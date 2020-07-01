@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The LineageOS Project
+ * Copyright (C) 2020 The LineageOS Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import android.widget.TextView;
 
 import org.lineageos.jelly.R;
 import org.lineageos.jelly.utils.PrefsUtils;
+import org.lineageos.jelly.utils.PrefsUtils.SuggestionProviderType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,14 +40,14 @@ import java.util.Locale;
 public class SuggestionsAdapter extends BaseAdapter implements Filterable {
     private final ArrayList<String> mItems = new ArrayList<>();
     private final Context mContext;
-    private final LayoutInflater mInflater;
+    private final LayoutInflater mInflator;
     private final ItemFilter mFilter;
     private String mQueryText;
 
     public SuggestionsAdapter(Context context) {
         super();
         mContext = context;
-        mInflater = LayoutInflater.from(mContext);
+        mInflator = LayoutInflater.from(mContext);
         mFilter = new ItemFilter();
     }
 
@@ -67,28 +68,30 @@ public class SuggestionsAdapter extends BaseAdapter implements Filterable {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        if (convertView == null) {
-            convertView = mInflater.inflate(R.layout.item_suggestion, parent, false);
+        View view = convertView;
+        if (view == null) {
+            view = mInflator.inflate(R.layout.item_suggestion, parent, false);
         }
 
-        TextView title = convertView.findViewById(R.id.title);
+        TextView title = view.findViewById(R.id.title);
         String suggestion = mItems.get(position);
 
         if (mQueryText != null) {
+            String query = mQueryText;
             SpannableStringBuilder spannable = new SpannableStringBuilder(suggestion);
             String lcSuggestion = suggestion.toLowerCase(Locale.getDefault());
-            int queryTextPos = lcSuggestion.indexOf(mQueryText);
+            int queryTextPos = lcSuggestion.indexOf(query);
             while (queryTextPos >= 0) {
                 spannable.setSpan(new StyleSpan(Typeface.BOLD),
-                        queryTextPos, queryTextPos + mQueryText.length(),
+                        queryTextPos, queryTextPos + query.length(),
                         Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                queryTextPos = lcSuggestion.indexOf(mQueryText, queryTextPos + mQueryText.length());
+                queryTextPos = lcSuggestion.indexOf(query, queryTextPos + query.length());
             }
             title.setText(spannable);
         } else {
             title.setText(suggestion);
         }
-        return convertView;
+        return view;
     }
 
     @Override
@@ -122,9 +125,10 @@ public class SuggestionsAdapter extends BaseAdapter implements Filterable {
             if (results.values != null) {
                 List<String> items = (List<String>) results.values;
                 mItems.addAll(items);
+                mQueryText = constraint != null
+                        ? constraint.toString().toLowerCase(Locale.getDefault()).trim() : null;
             }
-            mQueryText = constraint != null
-                    ? constraint.toString().toLowerCase(Locale.getDefault()).trim() : null;
+
             notifyDataSetChanged();
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The LineageOS Project
+ * Copyright (C) 2020 The LineageOS Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,11 @@
  */
 package org.lineageos.jelly.history;
 
-import android.app.LoaderManager;
-import android.app.ProgressDialog;
 import android.content.ContentResolver;
-import android.content.CursorLoader;
-import android.content.Loader;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.Menu;
@@ -32,22 +30,30 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.view.ViewCompat;
+import androidx.loader.app.LoaderManager;
+import androidx.loader.content.CursorLoader;
+import androidx.loader.content.Loader;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver;
 
 import com.google.android.material.snackbar.Snackbar;
 
 import org.lineageos.jelly.R;
+import org.lineageos.jelly.history.HistoryAdapter;
+import org.lineageos.jelly.history.HistoryCallBack;
+import org.lineageos.jelly.history.HistoryProvider;
 import org.lineageos.jelly.utils.UiUtils;
 
 public class HistoryActivity extends AppCompatActivity {
     private View mEmptyView;
 
     private HistoryAdapter mAdapter;
-    private final RecyclerView.AdapterDataObserver mAdapterDataObserver =
-            new RecyclerView.AdapterDataObserver() {
+    private final AdapterDataObserver mAdapterDataObserver =
+            new AdapterDataObserver() {
                 @Override
                 public void onChanged() {
                     updateHistoryView(mAdapter.getItemCount() == 0);
@@ -57,6 +63,12 @@ public class HistoryActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstance) {
         super.onCreate(savedInstance);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+                getWindow().setStatusBarColor(Color.BLACK);
+            }
+        }
 
         setContentView(R.layout.activity_history);
 
@@ -70,7 +82,7 @@ public class HistoryActivity extends AppCompatActivity {
 
         mAdapter = new HistoryAdapter(this);
 
-        getLoaderManager().initLoader(0, null, new LoaderManager.LoaderCallbacks<Cursor>() {
+        getSupportLoaderManager().initLoader(0, null, new LoaderManager.LoaderCallbacks<Cursor>() {
             @Override
             public Loader<Cursor> onCreateLoader(int id, Bundle args) {
                 return new CursorLoader(HistoryActivity.this, HistoryProvider.Columns.CONTENT_URI,
@@ -96,8 +108,7 @@ public class HistoryActivity extends AppCompatActivity {
         mAdapter.registerAdapterDataObserver(mAdapterDataObserver);
 
         ItemTouchHelper helper = new ItemTouchHelper(new HistoryCallBack(this, values -> {
-            View rootView = findViewById(R.id.coordinator_layout);
-            Snackbar.make(rootView, R.string.history_snackbar_item_deleted, Snackbar.LENGTH_LONG)
+            Snackbar.make(findViewById(R.id.coordinator_layout), R.string.history_snackbar_item_deleted, Snackbar.LENGTH_LONG)
                     .setAction(R.string.history_snackbar_item_deleted_message, l ->
                             getContentResolver().insert(HistoryProvider.Columns.CONTENT_URI, values))
                     .show();
@@ -112,7 +123,7 @@ public class HistoryActivity extends AppCompatActivity {
 
                 boolean elevate = recyclerView.getChildAt(0) != null &&
                         recyclerView.getChildAt(0).getTop() < listTop;
-                toolbar.setElevation(elevate ? UiUtils.dpToPx(getResources(),
+                ViewCompat.setElevation(toolbar, elevate ? UiUtils.dpToPx(getResources(),
                         getResources().getDimension(R.dimen.toolbar_elevation)) : 0);
             }
         });
@@ -151,11 +162,11 @@ public class HistoryActivity extends AppCompatActivity {
     }
 
     private void deleteAll() {
-        ProgressDialog dialog = new ProgressDialog(this);
-        dialog.setTitle(getString(R.string.history_delete_title));
-        dialog.setMessage(getString(R.string.history_deleting_message));
-        dialog.setCancelable(false);
-        dialog.setIndeterminate(true);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle(R.string.history_delete_title)
+            .setView(R.layout.history_deleting_dialog)
+            .setCancelable(false)
+            .create();
         dialog.show();
 
         new DeleteAllHistoryTask(getContentResolver(), dialog).execute();
@@ -163,9 +174,9 @@ public class HistoryActivity extends AppCompatActivity {
 
     private static class DeleteAllHistoryTask extends AsyncTask<Void, Void, Void> {
         private final ContentResolver contentResolver;
-        private final ProgressDialog dialog;
+        private final AlertDialog dialog;
 
-        DeleteAllHistoryTask(ContentResolver contentResolver, ProgressDialog dialog) {
+        DeleteAllHistoryTask(ContentResolver contentResolver, AlertDialog dialog) {
             this.contentResolver = contentResolver;
             this.dialog = dialog;
         }

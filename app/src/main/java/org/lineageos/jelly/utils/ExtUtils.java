@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The LineageOS Project
+ * Copyright (C) 2020 The LineageOS Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.lineageos.jelly.utils;
 
-package org.lineageos.jelly.webview;
+import android.content.ContentProvider;
+import android.content.Context;
 
-import android.webkit.WebView;
-
-public final class WebViewCompat {
-    private WebViewCompat() {
-    }
-
-    @SuppressWarnings("SameReturnValue, UnusedParameters")
-    public static boolean isThemeColorSupported(WebView webView) {
-        return false;
+public final class ExtUtils {
+    public static final Context requireContext(ContentProvider contentProvider) {
+        if (contentProvider == null) throw new IllegalStateException();
+        return contentProvider.getContext();
     }
 }
+

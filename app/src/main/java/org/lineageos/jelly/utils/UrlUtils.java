@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The LineageOS Project
+ * Copyright (C) 2020 The LineageOS Project
  * Copyright (C) 2010 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +19,7 @@ package org.lineageos.jelly.utils;
 import android.util.Patterns;
 import android.webkit.URLUtil;
 
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -52,7 +53,7 @@ public final class UrlUtils {
         if (matcher.matches()) {
             // force scheme to lowercase
             String scheme = matcher.group(1);
-            String lcScheme = scheme.toLowerCase();
+            String lcScheme = scheme.toLowerCase(Locale.getDefault());
             if (!lcScheme.equals(scheme)) {
                 inUrl = lcScheme + matcher.group(2);
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The LineageOS Project
+ * Copyright (C) 2020 The LineageOS Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,11 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.ProgressBar;
 
-import androidx.collection.ArrayMap;
-
 import org.lineageos.jelly.ui.UrlBarController;
 import org.lineageos.jelly.utils.PrefsUtils;
 import org.lineageos.jelly.utils.UrlUtils;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,7 +43,7 @@ public class WebViewExt extends WebView {
     private static final String DESKTOP_USER_AGENT_FALLBACK =
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2049.0 Safari/537.36";
     private static final String HEADER_DNT = "DNT";
-    private final Map<String, String> mRequestHeaders = new ArrayMap<>();
+    private final Map<String, String> mRequestHeaders = new HashMap<>();
     private WebViewExtActivity mActivity;
     private String mMobileUserAgent;
     private String mDesktopUserAgent;
@@ -160,8 +159,6 @@ public class WebViewExt extends WebView {
         measure(MeasureSpec.makeMeasureSpec(MeasureSpec.UNSPECIFIED, MeasureSpec.UNSPECIFIED),
                 MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED));
         layout(0, 0, getMeasuredWidth(), getMeasuredHeight());
-        setDrawingCacheEnabled(true);
-        buildDrawingCache();
         int size = getMeasuredWidth() > getMeasuredHeight() ?
                 getMeasuredHeight() : getMeasuredWidth();
         Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);

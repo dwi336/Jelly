@@ -35,13 +35,13 @@
         android:key="key_home_page"
         android:title="@string/pref_start_page" />
 
-    <SwitchPreference
+    <SwitchPreferenceCompat
         android:defaultValue="0"
         android:key="key_advanced_share"
         android:summary="@string/pref_screenshot_snap_summary"
         android:title="@string/pref_screenshot_snap_title" />
 
-    <SwitchPreference
+    <SwitchPreferenceCompat
         android:defaultValue="0"
         android:key="key_reach_mode"
         android:summary="@string/pref_reach_mode_summary"
@@ -51,38 +51,31 @@
         android:key="category_security"
         android:title="@string/pref_privacy_security">
 
-        <SwitchPreference
+        <SwitchPreferenceCompat
             android:defaultValue="0"
             android:key="key_looklock"
             android:summary="@string/pref_looklock_summary"
             android:title="@string/pref_looklock_title" />
 
-        <SwitchPreference
+        <SwitchPreferenceCompat
             android:defaultValue="1"
             android:key="key_javascript"
             android:summary="@string/pref_js_summary"
             android:title="@string/pref_js_title" />
 
-        <SwitchPreference
+        <SwitchPreferenceCompat
             android:defaultValue="1"
             android:key="key_location"
             android:summary="@string/pref_location_summary"
             android:title="@string/pref_location_title" />
 
-        <SwitchPreference
+        <SwitchPreferenceCompat
             android:defaultValue="0"
             android:key="key_do_not_track"
             android:summary="@string/pref_do_not_track_summary"
             android:title="@string/pref_do_not_track_title" />
 
-        <SwitchPreference
-            android:defaultValue="1"
-            android:key="key_clear_text_traffic"
-            android:summaryOff="@string/pref_clear_text_traffic_summary_off"
-            android:summaryOn="@string/pref_clear_text_traffic_summary_on"
-            android:title="@string/pref_clear_text_traffic_title" />
-
-        <SwitchPreference
+        <SwitchPreferenceCompat
             android:defaultValue="1"
             android:key="key_cookie"
             android:summary="@string/pref_cookie_summary"

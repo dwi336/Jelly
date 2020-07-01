@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The LineageOS Project
+ * Copyright (C) 2020 The LineageOS Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import android.net.Uri;
 import android.net.http.SslCertificate;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnFocusChangeListener;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -31,7 +32,7 @@ import org.lineageos.jelly.R;
 import java.text.DateFormat;
 import java.util.Date;
 
-public class UrlBarController implements View.OnFocusChangeListener {
+public class UrlBarController implements OnFocusChangeListener {
     private EditText mEditor;
     private ImageView mSecureIcon;
 

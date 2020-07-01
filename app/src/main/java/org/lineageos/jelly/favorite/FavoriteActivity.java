@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The LineageOS Project
+ * Copyright (C) 2020 The LineageOS Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,15 @@
  */
 package org.lineageos.jelly.favorite;
 
-import android.app.LoaderManager;
 import android.content.ContentResolver;
 import android.content.ContentUris;
-import android.content.CursorLoader;
-import android.content.Loader;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.BaseColumns;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -35,6 +35,11 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.view.ViewCompat;
+import androidx.loader.app.LoaderManager;
+import androidx.loader.app.LoaderManager.LoaderCallbacks;
+import androidx.loader.content.CursorLoader;
+import androidx.loader.content.Loader;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -52,6 +57,12 @@ public class FavoriteActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstance) {
         super.onCreate(savedInstance);
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+                getWindow().setStatusBarColor(Color.BLACK);
+            }
+        }
+
         setContentView(R.layout.activity_favorites);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -64,18 +75,18 @@ public class FavoriteActivity extends AppCompatActivity {
 
         mAdapter = new FavoriteAdapter(this);
 
-        getLoaderManager().initLoader(0, null, new LoaderManager.LoaderCallbacks<Cursor>() {
+        getSupportLoaderManager().initLoader(0, null, new LoaderCallbacks<Cursor>() {
             @Override
             public Loader<Cursor> onCreateLoader(int id, Bundle args) {
                 return new CursorLoader(FavoriteActivity.this, FavoriteProvider.Columns.CONTENT_URI,
-                        null, null, null, FavoriteProvider.Columns._ID + " DESC");
+                        null, null, null, BaseColumns._ID + " DESC");
             }
 
             @Override
-            public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-                mAdapter.swapCursor(cursor);
+            public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+                mAdapter.swapCursor(data);
 
-                if (cursor.getCount() == 0) {
+                if ( (data != null) && (data.getCount() == 0) ) {
                     mList.setVisibility(View.GONE);
                     mEmptyView.setVisibility(View.VISIBLE);
                 }
@@ -97,7 +108,7 @@ public class FavoriteActivity extends AppCompatActivity {
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
 
-                toolbar.setElevation(recyclerView.getChildAt(0).getTop() < listTop ?
+                ViewCompat.setElevation(toolbar, recyclerView.getChildAt(0).getTop() < listTop ?
                         UiUtils.dpToPx(getResources(),
                                 getResources().getDimension(R.dimen.toolbar_elevation)) : 0);
 
@@ -152,7 +163,7 @@ public class FavoriteActivity extends AppCompatActivity {
                         }))
                 .setNeutralButton(R.string.favorite_edit_delete,
                         (dialog, which) -> {
-                            new DeleteFavoriteTask(getContentResolver()).execute(id);
+                            new DeleteFavoriteTask(getContentResolver(), id).execute();
                             dialog.dismiss();
                         })
                 .setNegativeButton(android.R.string.cancel,
@@ -182,17 +193,17 @@ public class FavoriteActivity extends AppCompatActivity {
 
     private static class DeleteFavoriteTask extends AsyncTask<Long, Void, Void> {
         private final ContentResolver contentResolver;
+        private long id;
 
-        DeleteFavoriteTask(ContentResolver contentResolver) {
+        DeleteFavoriteTask(ContentResolver contentResolver, long id) {
             this.contentResolver = contentResolver;
+            this.id = id;
         }
 
         @Override
-        protected Void doInBackground(Long... ids) {
-            for (Long id : ids) {
-                Uri uri = ContentUris.withAppendedId(FavoriteProvider.Columns.CONTENT_URI, id);
-                contentResolver.delete(uri, null, null);
-            }
+        protected Void doInBackground(Long... params) {
+            Uri uri = ContentUris.withAppendedId(FavoriteProvider.Columns.CONTENT_URI, id);
+            contentResolver.delete(uri, null, null);
             return null;
         }
     }

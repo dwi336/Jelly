@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The LineageOS Project
+ * Copyright (C) 2020 The LineageOS Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,8 @@ import android.provider.BaseColumns;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.lineageos.jelly.utils.ExtUtils;
+
 public class FavoriteProvider extends ContentProvider {
     private static final int MATCH_ALL = 0;
     private static final int MATCH_ID = 1;
@@ -46,7 +48,7 @@ public class FavoriteProvider extends ContentProvider {
     public static void addOrUpdateItem(ContentResolver resolver, String title, String url,
                                        int color) {
         long existingId = -1;
-        Cursor cursor = resolver.query(Columns.CONTENT_URI, new String[]{Columns._ID},
+        Cursor cursor = resolver.query(Columns.CONTENT_URI, new String[]{BaseColumns._ID},
                 Columns.URL + "=?", new String[]{url}, null);
         if (cursor != null) {
             if (cursor.moveToFirst()) {
@@ -96,7 +98,7 @@ public class FavoriteProvider extends ContentProvider {
             case MATCH_ALL:
                 break;
             case MATCH_ID:
-                qb.appendWhere(Columns._ID + " = " + uri.getLastPathSegment());
+                qb.appendWhere(BaseColumns._ID + " = " + uri.getLastPathSegment());
                 break;
             default:
                 return null;
@@ -105,7 +107,7 @@ public class FavoriteProvider extends ContentProvider {
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
         Cursor ret = qb.query(db, projection, selection, selectionArgs, null, null, sortOrder);
 
-        ret.setNotificationUri(getContext().getContentResolver(), uri);
+        ret.setNotificationUri(ExtUtils.requireContext(this).getContentResolver(), uri);
 
         return ret;
     }
@@ -129,7 +131,7 @@ public class FavoriteProvider extends ContentProvider {
             return null;
         }
 
-        getContext().getContentResolver().notifyChange(Columns.CONTENT_URI, null);
+        ExtUtils.requireContext(this).getContentResolver().notifyChange(Columns.CONTENT_URI, null);
 
         return ContentUris.withAppendedId(Columns.CONTENT_URI, rowID);
     }
@@ -151,15 +153,15 @@ public class FavoriteProvider extends ContentProvider {
                     throw new UnsupportedOperationException(
                             "Cannot update URI " + uri + " with a where clause");
                 }
-                count = db.update(FavoriteDbHelper.DB_TABLE_FAVORITES, values, Columns._ID + " = ?",
-                        new String[]{uri.getLastPathSegment()});
+                count = db.update(FavoriteDbHelper.DB_TABLE_FAVORITES, 
+                        values, BaseColumns._ID + " = ?", new String[]{uri.getLastPathSegment()});
                 break;
             default:
                 throw new UnsupportedOperationException("Cannot update that URI: " + uri);
         }
 
         if (count > 0) {
-            getContext().getContentResolver().notifyChange(Columns.CONTENT_URI, null);
+            ExtUtils.requireContext(this).getContentResolver().notifyChange(Columns.CONTENT_URI, null);
         }
 
         return count;
@@ -168,6 +170,8 @@ public class FavoriteProvider extends ContentProvider {
     @Override
     public int delete(@NonNull Uri uri, @Nullable String selection,
                       @Nullable String[] selectionArgs) {
+        String localSelection = selection;
+        String[] localSelectionArgs = selectionArgs;
         int match = sURIMatcher.match(uri);
         SQLiteDatabase db = mDbHelper.getWritableDatabase();
 
@@ -175,21 +179,21 @@ public class FavoriteProvider extends ContentProvider {
             case MATCH_ALL:
                 break;
             case MATCH_ID:
-                if (selection != null || selectionArgs != null) {
+                if (localSelection != null || localSelectionArgs != null) {
                     throw new UnsupportedOperationException(
                             "Cannot delete URI " + uri + " with a where clause");
                 }
-                selection = Columns._ID + " = ?";
-                selectionArgs = new String[]{uri.getLastPathSegment()};
+                localSelection = BaseColumns._ID + " = ?";
+                localSelectionArgs = new String[]{uri.getLastPathSegment()};
                 break;
             default:
                 throw new UnsupportedOperationException("Cannot delete the URI " + uri);
         }
 
-        int count = db.delete(FavoriteDbHelper.DB_TABLE_FAVORITES, selection, selectionArgs);
+        int count = db.delete(FavoriteDbHelper.DB_TABLE_FAVORITES, localSelection, localSelectionArgs);
 
         if (count > 0) {
-            getContext().getContentResolver().notifyChange(Columns.CONTENT_URI, null);
+            ExtUtils.requireContext(this).getContentResolver().notifyChange(Columns.CONTENT_URI, null);
         }
 
         return count;
@@ -216,7 +220,7 @@ public class FavoriteProvider extends ContentProvider {
         @Override
         public void onCreate(SQLiteDatabase db) {
             db.execSQL("CREATE TABLE " + DB_TABLE_FAVORITES + " (" +
-                    Columns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                     Columns.TITLE + " TEXT, " +
                     Columns.URL + " TEXT, " +
                     Columns.COLOR + " INTEGER)");
@@ -227,7 +231,7 @@ public class FavoriteProvider extends ContentProvider {
             if (oldVersion < 2) {
                 // Recreate table with auto incrementing id column.
                 db.execSQL("CREATE TABLE " + DB_TABLE_FAVORITES + "_new (" +
-                        Columns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                         Columns.TITLE + " TEXT, " +
                         Columns.URL + " TEXT, " +
                         Columns.COLOR + " INTEGER)");

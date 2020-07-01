@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The LineageOS Project
+ * Copyright (C) 2020 The LineageOS Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,12 @@
  */
 package org.lineageos.jelly.webview;
 
+import android.annotation.TargetApi;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Message;
 import android.view.View;
 import android.webkit.GeolocationPermissions;
@@ -33,7 +35,7 @@ import org.lineageos.jelly.history.HistoryProvider;
 import org.lineageos.jelly.ui.UrlBarController;
 import org.lineageos.jelly.utils.TabUtils;
 
-class ChromeClient extends WebChromeClientCompat {
+class ChromeClient extends WebChromeClient {
     private final WebViewExtActivity mActivity;
     private final boolean mIncognito;
 
@@ -57,12 +59,6 @@ class ChromeClient extends WebChromeClientCompat {
     }
 
     @Override
-    public void onThemeColorChanged(WebView view, int color) {
-        mActivity.onThemeColorSet(color);
-        super.onThemeColorChanged(view, color);
-    }
-
-    @Override
     public void onReceivedTitle(WebView view, String title) {
         mUrlBarController.onTitleReceived(title);
         if (!mIncognito) {
@@ -75,6 +71,18 @@ class ChromeClient extends WebChromeClientCompat {
         mActivity.onFaviconLoaded(icon);
     }
 
+    public void openFileChooser(ValueCallback<Uri> uploadFile, String acceptType, String capture) {
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        try {
+            mActivity.startActivity(intent);
+        } catch (ActivityNotFoundException e) {
+            Toast.makeText(mActivity, mActivity.getString(R.string.error_no_activity_found),
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
+    // For Lollipop 5.0+ Devices
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @Override
     public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> path,
                                      FileChooserParams params) {

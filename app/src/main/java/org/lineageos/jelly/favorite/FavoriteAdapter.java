@@ -17,6 +17,7 @@ package org.lineageos.jelly.favorite;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.provider.BaseColumns;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
@@ -48,7 +49,7 @@ class FavoriteAdapter extends RecyclerView.Adapter<FavoriteHolder> {
         }
         mCursor = cursor;
         if (mCursor != null) {
-            mIdColumnIndex = cursor.getColumnIndexOrThrow(FavoriteProvider.Columns._ID);
+            mIdColumnIndex = cursor.getColumnIndexOrThrow(BaseColumns._ID);
             mTitleColumnIndex = cursor.getColumnIndexOrThrow(FavoriteProvider.Columns.TITLE);
             mUrlColumnIndex = cursor.getColumnIndexOrThrow(FavoriteProvider.Columns.URL);
             mColorColumnIndex = cursor.getColumnIndexOrThrow(FavoriteProvider.Columns.COLOR);
@@ -65,13 +66,13 @@ class FavoriteAdapter extends RecyclerView.Adapter<FavoriteHolder> {
 
     @Override
     public void onBindViewHolder(@NonNull FavoriteHolder holder, int position) {
-        if (!mCursor.moveToPosition(position)) {
-            return;
-        }
-        long id = mCursor.getLong(mIdColumnIndex);
-        String title = mCursor.getString(mTitleColumnIndex);
-        String url = mCursor.getString(mUrlColumnIndex);
-        int color = mCursor.getInt(mColorColumnIndex);
+        Cursor cursor = this.mCursor;
+        if (cursor == null) return;
+
+        long id = cursor.getLong(mIdColumnIndex);
+        String title = cursor.getString(mTitleColumnIndex);
+        String url = cursor.getString(mUrlColumnIndex);
+        int color = cursor.getInt(mColorColumnIndex);
         holder.bind(mContext, id, title, url, color);
     }
 
@@ -82,6 +83,8 @@ class FavoriteAdapter extends RecyclerView.Adapter<FavoriteHolder> {
 
     @Override
     public long getItemId(int position) {
-        return mCursor.moveToPosition(position) ? mCursor.getLong(mIdColumnIndex) : -1;
+        Cursor cursor = this.mCursor;
+        if (cursor == null) return -1;
+        return cursor.moveToPosition(position) ? cursor.getLong(mIdColumnIndex) : -1;
     }
 }

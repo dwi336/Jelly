@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2019 The LineageOS Project
+ * Copyright (C) 2020 The LineageOS Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 package org.lineageos.jelly;
 
 import android.Manifest;
-import android.app.ActivityManager;
+import android.app.Activity;
+import android.app.ActivityManager.TaskDescription;
 import android.app.DownloadManager;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
@@ -24,6 +25,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.content.pm.ShortcutManager;
+import android.content.SharedPreferences;
 import androidx.core.content.pm.ShortcutInfoCompat;
 import androidx.core.content.pm.ShortcutManagerCompat;
 import android.content.res.ColorStateList;
@@ -31,6 +34,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.PorterDuff;
 import androidx.core.graphics.drawable.IconCompat;
 import android.graphics.drawable.TransitionDrawable;
 import android.net.Uri;
@@ -41,9 +45,10 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.ResultReceiver;
-import android.preference.PreferenceManager;
+
 import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
+import android.print.PrintJob;
 import android.print.PrintManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -56,9 +61,10 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.webkit.CookieManager;
+import android.webkit.CookieSyncManager;
 import android.webkit.MimeTypeMap;
 import android.webkit.URLUtil;
-import android.webkit.WebChromeClient;
+import android.webkit.WebChromeClient.CustomViewCallback;
 import android.widget.AutoCompleteTextView;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
@@ -67,6 +73,7 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
@@ -76,9 +83,10 @@ import androidx.appcompat.view.menu.MenuPopupHelper;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.preference.PreferenceManager;
 
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -94,7 +102,6 @@ import org.lineageos.jelly.utils.IntentUtils;
 import org.lineageos.jelly.utils.PrefsUtils;
 import org.lineageos.jelly.utils.TabUtils;
 import org.lineageos.jelly.utils.UiUtils;
-import org.lineageos.jelly.webview.WebViewCompat;
 import org.lineageos.jelly.webview.WebViewExt;
 import org.lineageos.jelly.webview.WebViewExtActivity;
 
@@ -104,7 +111,7 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 
 public class MainActivity extends WebViewExtActivity implements
-        SearchBarController.OnCancelListener {
+        SearchBarController.OnCancelListener, SharedPreferences.OnSharedPreferenceChangeListener {
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String PROVIDER = "org.lineageos.jelly.fileprovider";
     private static final String STATE_KEY_THEME_COLOR = "theme_color";
@@ -117,6 +124,10 @@ public class MainActivity extends WebViewExtActivity implements
     private final BroadcastReceiver mUrlResolvedReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            if (!intent.hasExtra(Intent.EXTRA_INTENT) ||
+                    !intent.hasExtra(Intent.EXTRA_RESULT_RECEIVER)) {
+                return;
+            }
             Intent resolvedIntent = intent.getParcelableExtra(Intent.EXTRA_INTENT);
             if (TextUtils.equals(getPackageName(), resolvedIntent.getPackage())) {
                 String url = intent.getStringExtra(IntentUtils.EXTRA_URL);
@@ -125,33 +136,33 @@ public class MainActivity extends WebViewExtActivity implements
                 startActivity(resolvedIntent);
             }
             ResultReceiver receiver = intent.getParcelableExtra(Intent.EXTRA_RESULT_RECEIVER);
-            receiver.send(RESULT_CANCELED, new Bundle());
+            receiver.send(Activity.RESULT_CANCELED, new Bundle());
         }
     };
     private ProgressBar mLoadingProgress;
     private SearchBarController mSearchController;
     private RelativeLayout mToolbarSearchBar;
-    private boolean mHasThemeColorSupport;
     private Drawable mLastActionBarDrawable;
     private int mThemeColor;
     private String mWaitingDownloadUrl;
     private Bitmap mUrlIcon;
-    private final BroadcastReceiver mUiModeChangeReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            setUiMode();
-        }
-    };
+
     private boolean mIncognito;
 
     private View mCustomView;
-    private WebChromeClient.CustomViewCallback mFullScreenCallback;
+    private CustomViewCallback mFullScreenCallback;
 
     private boolean mSearchActive = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+                getWindow().setStatusBarColor(Color.BLACK);
+            }
+        }
 
         setContentView(R.layout.activity_main);
 
@@ -217,9 +228,8 @@ public class MainActivity extends WebViewExtActivity implements
 
         // Make sure prefs are set before loading them
         PreferenceManager.setDefaultValues(this, R.xml.settings, false);
-
-        // Listen for local broadcasts
-        registerLocalBroadcastListeners();
+        SharedPreferences preferenceManager = PreferenceManager.getDefaultSharedPreferences(this);
+        preferenceManager.registerOnSharedPreferenceChangeListener(this);
 
         setUiMode();
 
@@ -235,8 +245,6 @@ public class MainActivity extends WebViewExtActivity implements
         mWebView.init(this, urlBarController, mLoadingProgress, mIncognito);
         mWebView.setDesktopMode(desktopMode);
         mWebView.loadUrl(url == null ? PrefsUtils.getHomePage(this) : url);
-
-        mHasThemeColorSupport = WebViewCompat.isThemeColorSupported(mWebView);
 
         mSearchController = new SearchBarController(mWebView,
                 findViewById(R.id.search_menu_edit),
@@ -265,12 +273,13 @@ public class MainActivity extends WebViewExtActivity implements
 
     @Override
     protected void onStop() {
-        CookieManager.getInstance().flush();
-        unregisterReceiver(mUrlResolvedReceiver);
-        HttpResponseCache cache = HttpResponseCache.getInstalled();
-        if (cache != null) {
-            cache.flush();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            CookieManager.getInstance().flush();
+        } else {
+            CookieSyncManager.getInstance().sync();
         }
+        unregisterReceiver(mUrlResolvedReceiver);
+        HttpResponseCache.getInstalled().flush();
         super.onStop();
     }
 
@@ -292,14 +301,6 @@ public class MainActivity extends WebViewExtActivity implements
         } else {
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
         }
-    }
-
-    @Override
-    protected void onDestroy() {
-        // Unregister the local broadcast receiver because the activity is being trashed
-        unregisterLocalBroadcastsListeners();
-
-        super.onDestroy();
     }
 
     @Override
@@ -328,7 +329,7 @@ public class MainActivity extends WebViewExtActivity implements
                 if (hasStoragePermission() && mWaitingDownloadUrl != null) {
                     downloadFileAsk(mWaitingDownloadUrl, null, null);
                 } else {
-                    if (shouldShowRequestPermissionRationale(
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(this, 
                             Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
                         new AlertDialog.Builder(this)
                                 .setTitle(R.string.permission_error_title)
@@ -408,12 +409,19 @@ public class MainActivity extends WebViewExtActivity implements
                         addShortcut();
                         break;
                     case R.id.menu_print:
-                        PrintManager printManager = getSystemService(PrintManager.class);
+                        PrintManager printManager = ContextCompat.getSystemService(this, PrintManager.class);
                         String documentName = "Jelly document";
-                        PrintDocumentAdapter printAdapter =
-                                mWebView.createPrintDocumentAdapter(documentName);
+                        PrintDocumentAdapter printAdapter = null;
+                        if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ) {
+                            printAdapter =
+                                    mWebView.createPrintDocumentAdapter(documentName);
+                        } else {
+                            printAdapter =
+                                    mWebView.createPrintDocumentAdapter();
+                        }
                         printManager.print(documentName, printAdapter,
                                 new PrintAttributes.Builder().build());
+
                         break;
                     case R.id.desktop_mode:
                         mWebView.setDesktopMode(!isDesktop);
@@ -463,9 +471,6 @@ public class MainActivity extends WebViewExtActivity implements
             try {
                 FileOutputStream out = new FileOutputStream(file);
                 Bitmap bm = mWebView.getSnap();
-                if (bm == null) {
-                    return;
-                }
                 bm.compress(Bitmap.CompressFormat.PNG, 70, out);
                 out.flush();
                 out.close();
@@ -512,6 +517,7 @@ public class MainActivity extends WebViewExtActivity implements
                 .show();
     }
 
+    @SuppressWarnings("DEPRECATION")
     private void fetchFile(String url, String fileName) {
         DownloadManager.Request request;
 
@@ -524,13 +530,15 @@ public class MainActivity extends WebViewExtActivity implements
 
         // Let this downloaded file be scanned by MediaScanner - so that it can
         // show up in Gallery app, for example.
-        request.allowScanningByMediaScanner();
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            request.allowScanningByMediaScanner();
+        }
         request.setNotificationVisibility(
                 DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
         request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
         request.setMimeType(MimeTypeMap.getSingleton().getMimeTypeFromExtension(
                 MimeTypeMap.getFileExtensionFromUrl(url)));
-        getSystemService(DownloadManager.class).enqueue(request);
+        ContextCompat.getSystemService(this, DownloadManager.class).enqueue(request);
     }
 
     public void showSheetMenu(String url, boolean shouldAllowDownload) {
@@ -567,28 +575,22 @@ public class MainActivity extends WebViewExtActivity implements
 
     private void requestStoragePermission() {
         String[] permissionArray = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE};
-        requestPermissions(permissionArray, STORAGE_PERM_REQ);
+        ActivityCompat.requestPermissions(this, permissionArray, STORAGE_PERM_REQ);
     }
 
     private boolean hasStoragePermission() {
-        int result = checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        int result = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
         return result == PackageManager.PERMISSION_GRANTED;
     }
 
     public void requestLocationPermission() {
         String[] permissionArray = new String[]{Manifest.permission.ACCESS_FINE_LOCATION};
-        requestPermissions(permissionArray, LOCATION_PERM_REQ);
+        ActivityCompat.requestPermissions(this, permissionArray, LOCATION_PERM_REQ);
     }
 
     public boolean hasLocationPermission() {
-        int result = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION);
+        int result = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
         return result == PackageManager.PERMISSION_GRANTED;
-    }
-
-    public void onThemeColorSet(int color) {
-        if (mHasThemeColorSupport) {
-            applyThemeColor(color);
-        }
     }
 
     public void onFaviconLoaded(Bitmap favicon) {
@@ -597,9 +599,7 @@ public class MainActivity extends WebViewExtActivity implements
         }
 
         mUrlIcon = favicon.copy(favicon.getConfig(), true);
-        if (!mHasThemeColorSupport) {
-            applyThemeColor(UiUtils.getColor(favicon, mWebView.isIncognito()));
-        }
+        applyThemeColor(UiUtils.getColor(favicon, mWebView.isIncognito()));
 
         if (!favicon.isRecycled()) {
             favicon.recycle();
@@ -607,13 +607,14 @@ public class MainActivity extends WebViewExtActivity implements
     }
 
     private void applyThemeColor(int color) {
-        boolean hasValidColor = color != Color.TRANSPARENT;
-        mThemeColor = color;
-        color = getThemeColorWithFallback();
+        int localColor = color;
+        boolean hasValidColor = localColor != Color.TRANSPARENT;
+        mThemeColor = localColor;
+        localColor = getThemeColorWithFallback();
 
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
-            ColorDrawable newDrawable = new ColorDrawable(color);
+            ColorDrawable newDrawable = new ColorDrawable(localColor);
             if (mLastActionBarDrawable != null) {
                 final Drawable[] layers = new Drawable[]{mLastActionBarDrawable, newDrawable};
                 final TransitionDrawable transition = new TransitionDrawable(layers);
@@ -627,20 +628,29 @@ public class MainActivity extends WebViewExtActivity implements
         }
 
         int progressColor = hasValidColor
-                ? UiUtils.isColorLight(color) ? Color.BLACK : Color.WHITE
+                ? UiUtils.isColorLight(localColor) ? Color.BLACK : Color.WHITE
                 : ContextCompat.getColor(this, R.color.colorAccent);
-        mLoadingProgress.setProgressTintList(ColorStateList.valueOf(progressColor));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            mLoadingProgress.setProgressTintList(ColorStateList.valueOf(progressColor));
+        } else {
+            Drawable progressDrawable;
+            progressDrawable = mLoadingProgress.getProgressDrawable().mutate();
+            progressDrawable.setColorFilter(progressColor, PorterDuff.Mode.SRC_IN);
+            mLoadingProgress.setProgressDrawable(progressDrawable);
+        }
         mLoadingProgress.postInvalidate();
 
         boolean isReachMode = UiUtils.isReachModeEnabled(this);
-        if (isReachMode) {
-            getWindow().setNavigationBarColor(color);
-        } else {
-            getWindow().setStatusBarColor(color);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            if (isReachMode) {
+                getWindow().setNavigationBarColor(localColor);
+            } else {
+                getWindow().setStatusBarColor(localColor);
+            }
         }
 
         int flags = getWindow().getDecorView().getSystemUiVisibility();
-        if (UiUtils.isColorLight(color)) {
+        if (UiUtils.isColorLight(localColor)) {
             flags |= ( isReachMode && (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ) ?
                     View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR :
                     View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
@@ -652,8 +662,10 @@ public class MainActivity extends WebViewExtActivity implements
 
         getWindow().getDecorView().setSystemUiVisibility(flags);
 
-        setTaskDescription(new ActivityManager.TaskDescription(mWebView.getTitle(),
-                mUrlIcon, color));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            setTaskDescription(new TaskDescription(mWebView.getTitle(),
+                    mUrlIcon, localColor));
+        }
     }
 
     private void resetSystemUIColor() {
@@ -664,8 +676,10 @@ public class MainActivity extends WebViewExtActivity implements
         }
         getWindow().getDecorView().setSystemUiVisibility(flags);
 
-        getWindow().setStatusBarColor(Color.BLACK);
-        getWindow().setNavigationBarColor(Color.BLACK);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().setStatusBarColor(Color.BLACK);
+            getWindow().setNavigationBarColor(Color.BLACK);
+        }
     }
 
     private int getThemeColorWithFallback() {
@@ -677,7 +691,7 @@ public class MainActivity extends WebViewExtActivity implements
     }
 
     @Override
-    public void onShowCustomView(View view, WebChromeClient.CustomViewCallback callback) {
+    public void onShowCustomView(View view, CustomViewCallback callback) {
         if (mCustomView != null) {
             callback.onCustomViewHidden();
             return;
@@ -755,19 +769,10 @@ public class MainActivity extends WebViewExtActivity implements
         setImmersiveMode(hasFocus && mCustomView != null);
     }
 
-    private void registerLocalBroadcastListeners() {
-        LocalBroadcastManager manager = LocalBroadcastManager.getInstance(this);
-
-        if (!UiUtils.isTablet(this)) {
-            manager.registerReceiver(mUiModeChangeReceiver, new IntentFilter(IntentUtils.EVENT_CHANGE_UI_MODE));
-        }
-    }
-
-    private void unregisterLocalBroadcastsListeners() {
-        LocalBroadcastManager manager = LocalBroadcastManager.getInstance(this);
-
-        if (!UiUtils.isTablet(this)) {
-            manager.unregisterReceiver(mUiModeChangeReceiver);
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if ( key.equals("key_reach_mode") ){
+            this.setUiMode();
         }
     }
 
@@ -826,11 +831,11 @@ public class MainActivity extends WebViewExtActivity implements
     }
 
     private static class SetAsFavoriteTask extends AsyncTask<Void, Void, Boolean> {
+        private ContentResolver contentResolver;
         private final String title;
         private final String url;
         private final int color;
         private final WeakReference<View> parentView;
-        private ContentResolver contentResolver;
 
         SetAsFavoriteTask(ContentResolver contentResolver, String title, String url,
                           int color, View parentView) {

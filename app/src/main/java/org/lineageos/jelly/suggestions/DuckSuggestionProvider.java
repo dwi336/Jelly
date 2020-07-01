@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The LineageOS Project
+ * Copyright (C) 2020 The LineageOS Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,12 +41,11 @@ class DuckSuggestionProvider extends SuggestionProvider {
                                 @NonNull ResultCallback callback) throws Exception {
         JSONArray jsonArray = new JSONArray(content);
         for (int n = 0, size = jsonArray.length(); n < size; n++) {
-            JSONObject object = jsonArray.getJSONObject(n);
-            String suggestion = object.getString("phrase");
+            JSONObject obj = jsonArray.getJSONObject(n);
+            String suggestion = obj.getString("phrase");
             if (!callback.addResult(suggestion)) {
                 break;
             }
         }
     }
-
 }

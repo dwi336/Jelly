@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The LineageOS Project
+ * Copyright (C) 2020 The LineageOS Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package org.lineageos.jelly.utils;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 
 import org.lineageos.jelly.R;
 
@@ -93,11 +93,6 @@ public final class PrefsUtils {
     }
 
     public enum SuggestionProviderType {
-        BAIDU,
-        BING,
-        DUCK,
-        GOOGLE,
-        YAHOO,
-        NONE
+        BAIDU, BING, DUCK, GOOGLE, YAHOO, NONE
     }
 }

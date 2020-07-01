@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The LineageOS Project
+ * Copyright (C) 2020 The LineageOS Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package org.lineageos.jelly.webview;
 
+import android.annotation.TargetApi;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
@@ -25,6 +26,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.Build;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -37,10 +39,10 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
+import androidx.webkit.WebResourceRequestCompat;
 
 import com.google.android.material.snackbar.Snackbar;
 
-import org.lineageos.jelly.IntentFilterCompat;
 import org.lineageos.jelly.R;
 import org.lineageos.jelly.ui.UrlBarController;
 import org.lineageos.jelly.utils.IntentUtils;
@@ -48,6 +50,7 @@ import org.lineageos.jelly.utils.UrlUtils;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 
@@ -72,6 +75,23 @@ class WebClient extends WebViewClient {
     }
 
     @Override
+    public boolean shouldOverrideUrlLoading(WebView view, String url) {
+        WebViewExt webViewExt = (WebViewExt) view;
+        boolean needsLookup = !TextUtils.equals(url, webViewExt.getLastLoadedUrl());
+
+        if (!webViewExt.isIncognito()
+                && needsLookup
+                && startActivityForUrl(view, url)) {
+            return true;
+        } else if (!webViewExt.getRequestHeaders().isEmpty()) {
+            webViewExt.followUrl(url);
+            return true;
+        }
+        return false;
+    }
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    @Override
     public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
         if (request.isForMainFrame()) {
             WebViewExt webViewExt = (WebViewExt) view;
@@ -81,7 +101,7 @@ class WebClient extends WebViewClient {
 
             if (!webViewExt.isIncognito()
                     && needsLookup
-                    && !request.isRedirect()
+                    && !WebResourceRequestCompat.isRedirect(request)
                     && startActivityForUrl(view, url)) {
                 return true;
             } else if (!webViewExt.getRequestHeaders().isEmpty()) {
@@ -102,9 +122,9 @@ class WebClient extends WebViewClient {
         View dialogView = layoutInflater.inflate(R.layout.auth_dialog, new LinearLayout(context));
         EditText username = dialogView.findViewById(R.id.username);
         EditText password = dialogView.findViewById(R.id.password);
-        TextView auth_detail = dialogView.findViewById(R.id.auth_detail);
+        TextView authDetail = dialogView.findViewById(R.id.auth_detail);
         String text = context.getString(R.string.auth_dialog_detail, view.getUrl());
-        auth_detail.setText(text);
+        authDetail.setText(text);
         builder.setView(dialogView)
                 .setTitle(R.string.auth_dialog_title)
                 .setPositiveButton(R.string.auth_dialog_login,
@@ -170,7 +190,7 @@ class WebClient extends WebViewClient {
         final ArrayList<Intent> chooserIntents = new ArrayList<>();
         final String ourPackageName = context.getPackageName();
 
-        activities.sort(new ResolveInfo.DisplayNameComparator(pm));
+        Collections.sort(activities, new ResolveInfo.DisplayNameComparator(pm));
 
         for (ResolveInfo resolveInfo : activities) {
             IntentFilter filter = resolveInfo.filter;
@@ -181,7 +201,7 @@ class WebClient extends WebViewClient {
             if (filter == null) {
                 continue;
             }
-            if (IntentFilterCompat.filterIsBrowser(filter)
+            if ( (filter.countDataAuthorities() == 0)
                     && !TextUtils.equals(info.packageName, ourPackageName)) {
                 continue;
             }
@@ -198,7 +218,7 @@ class WebClient extends WebViewClient {
         final Intent lastIntent = chooserIntents.remove(chooserIntents.size() - 1);
         if (chooserIntents.isEmpty()) {
             // there was only one, no need to show the chooser
-            return TextUtils.equals(lastIntent.getPackage(), ourPackageName) ? null : lastIntent;
+            return ourPackageName.equals(lastIntent.getPackage()) ? null : lastIntent;
         }
 
         Intent changeIntent = new Intent(IntentUtils.EVENT_URL_RESOLVED)

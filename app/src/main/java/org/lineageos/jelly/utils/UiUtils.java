@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The LineageOS Project
+ * Copyright (C) 2020 The LineageOS Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
-import android.preference.PreferenceManager;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -34,8 +33,10 @@ import android.widget.ImageButton;
 
 import androidx.annotation.AttrRes;
 import androidx.annotation.StyleRes;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.palette.graphics.Palette;
+import androidx.preference.PreferenceManager;
 
 import org.lineageos.jelly.R;
 
@@ -97,7 +98,7 @@ public final class UiUtils {
      * @param view The currently focused {@link View}, which would receive soft keyboard input.
      */
     public static void showKeyboard(View view) {
-        InputMethodManager imm = view.getContext().getSystemService(InputMethodManager.class);
+        InputMethodManager imm = ContextCompat.getSystemService(view.getContext(), InputMethodManager.class);
         imm.toggleSoftInputFromWindow(view.getWindowToken(), 0, 0);
     }
 
@@ -107,7 +108,7 @@ public final class UiUtils {
      * @param view The {@link View} that is currently accepting input.
      */
     public static void hideKeyboard(View view) {
-        InputMethodManager imm = view.getContext().getSystemService(InputMethodManager.class);
+        InputMethodManager imm = ContextCompat.getSystemService(view.getContext(), InputMethodManager.class);
         imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
 

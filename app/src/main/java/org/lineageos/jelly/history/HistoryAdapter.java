@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The LineageOS Project
+ * Copyright (C) 2020 The LineageOS Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package org.lineageos.jelly.history;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.provider.BaseColumns;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
@@ -56,7 +57,7 @@ class HistoryAdapter extends RecyclerView.Adapter<HistoryHolder> {
         }
         mCursor = cursor;
         if (mCursor != null) {
-            mIdColumnIndex = cursor.getColumnIndexOrThrow(HistoryProvider.Columns._ID);
+            mIdColumnIndex = cursor.getColumnIndexOrThrow(BaseColumns._ID);
             mTitleColumnIndex = cursor.getColumnIndexOrThrow(HistoryProvider.Columns.TITLE);
             mUrlColumnIndex = cursor.getColumnIndexOrThrow(HistoryProvider.Columns.URL);
             mTimestampColumnIndex = cursor.getColumnIndexOrThrow(HistoryProvider.Columns.TIMESTAMP);
@@ -73,13 +74,15 @@ class HistoryAdapter extends RecyclerView.Adapter<HistoryHolder> {
 
     @Override
     public void onBindViewHolder(@NonNull HistoryHolder holder, int position) {
-        if (!mCursor.moveToPosition(position)) {
+        Cursor cursor = this.mCursor;
+        if (cursor == null) return;
+        if (!cursor.moveToPosition(position)) {
             return;
         }
-        long timestamp = mCursor.getLong(mTimestampColumnIndex);
+        long timestamp = cursor.getLong(mTimestampColumnIndex);
         String summary = mHistoryDateFormat.format(new Date(timestamp));
-        String title = mCursor.getString(mTitleColumnIndex);
-        String url = mCursor.getString(mUrlColumnIndex);
+        String title = cursor.getString(mTitleColumnIndex);
+        String url = cursor.getString(mUrlColumnIndex);
         holder.bind(mContext, title, url, summary, timestamp);
     }
 
@@ -90,6 +93,8 @@ class HistoryAdapter extends RecyclerView.Adapter<HistoryHolder> {
 
     @Override
     public long getItemId(int position) {
-        return mCursor.moveToPosition(position) ? mCursor.getLong(mIdColumnIndex) : -1;
+        Cursor cursor = this.mCursor;
+        if (cursor == null) return -1;
+        return cursor.moveToPosition(position) ? cursor.getLong(mIdColumnIndex) : -1;
     }
 }
