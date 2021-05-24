@@ -107,7 +107,7 @@ public class FavoriteProvider extends ContentProvider {
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
         Cursor ret = qb.query(db, projection, selection, selectionArgs, null, null, sortOrder);
 
-        ret.setNotificationUri(ExtUtils.requireContext(this).getContentResolver(), uri);
+        ret.setNotificationUri(ExtUtils.requireContextExt(this).getContentResolver(), uri);
 
         return ret;
     }
@@ -131,7 +131,7 @@ public class FavoriteProvider extends ContentProvider {
             return null;
         }
 
-        ExtUtils.requireContext(this).getContentResolver().notifyChange(Columns.CONTENT_URI, null);
+        ExtUtils.requireContextExt(this).getContentResolver().notifyChange(Columns.CONTENT_URI, null);
 
         return ContentUris.withAppendedId(Columns.CONTENT_URI, rowID);
     }
@@ -161,7 +161,7 @@ public class FavoriteProvider extends ContentProvider {
         }
 
         if (count > 0) {
-            ExtUtils.requireContext(this).getContentResolver().notifyChange(Columns.CONTENT_URI, null);
+            ExtUtils.requireContextExt(this).getContentResolver().notifyChange(Columns.CONTENT_URI, null);
         }
 
         return count;
@@ -193,7 +193,7 @@ public class FavoriteProvider extends ContentProvider {
         int count = db.delete(FavoriteDbHelper.DB_TABLE_FAVORITES, localSelection, localSelectionArgs);
 
         if (count > 0) {
-            ExtUtils.requireContext(this).getContentResolver().notifyChange(Columns.CONTENT_URI, null);
+            ExtUtils.requireContextExt(this).getContentResolver().notifyChange(Columns.CONTENT_URI, null);
         }
 
         return count;
@@ -213,7 +213,7 @@ public class FavoriteProvider extends ContentProvider {
         private static final String DB_NAME = "FavoriteDatabase";
         private static final String DB_TABLE_FAVORITES = "favorites";
 
-        FavoriteDbHelper(Context context) {
+        public FavoriteDbHelper(Context context) {
             super(context, DB_NAME, null, DB_VERSION);
         }
 

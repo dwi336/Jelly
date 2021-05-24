@@ -16,6 +16,7 @@
 package org.lineageos.jelly;
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ActivityManager.TaskDescription;
 import android.app.DownloadManager;
@@ -58,6 +59,8 @@ import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.webkit.CookieManager;
@@ -135,7 +138,12 @@ public class MainActivity extends WebViewExtActivity implements
             } else {
                 startActivity(resolvedIntent);
             }
-            ResultReceiver receiver = intent.getParcelableExtra(Intent.EXTRA_RESULT_RECEIVER);
+            ResultReceiver receiver = null;
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+                receiver = intent.getParcelableExtra("android.intent.extra.RESULT_RECEIVER");
+            } else {
+                receiver = intent.getParcelableExtra(Intent.EXTRA_RESULT_RECEIVER);
+            }
             receiver.send(Activity.RESULT_CANCELED, new Bundle());
         }
     };
@@ -231,8 +239,6 @@ public class MainActivity extends WebViewExtActivity implements
         SharedPreferences preferenceManager = PreferenceManager.getDefaultSharedPreferences(this);
         preferenceManager.registerOnSharedPreferenceChangeListener(this);
 
-        setUiMode();
-
         ImageView incognitoIcon = findViewById(R.id.incognito);
         incognitoIcon.setVisibility(mIncognito ? View.VISIBLE : View.GONE);
 
@@ -254,7 +260,7 @@ public class MainActivity extends WebViewExtActivity implements
                 findViewById(R.id.search_menu_cancel),
                 this);
 
-        applyThemeColor(mThemeColor);
+        setUiMode();
 
         try {
             File httpCacheDir = new File(getCacheDir(), "suggestion_responses");
@@ -319,6 +325,7 @@ public class MainActivity extends WebViewExtActivity implements
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] results) {
+        super.onRequestPermissionsResult(requestCode, permissions, results);
         switch (requestCode) {
             case LOCATION_PERM_REQ:
                 if (hasLocationPermission()) {
@@ -463,6 +470,9 @@ public class MainActivity extends WebViewExtActivity implements
     }
 
     private void shareUrl(String url) {
+        if (url == null) {
+            return;
+        }
         Intent intent = new Intent(Intent.ACTION_SEND);
         intent.putExtra(Intent.EXTRA_TEXT, url);
 
@@ -489,6 +499,9 @@ public class MainActivity extends WebViewExtActivity implements
     }
 
     private void setAsFavorite(String title, String url) {
+        if (title == null || url == null) {
+            return;
+        }
         boolean hasValidIcon = mUrlIcon != null && !mUrlIcon.isRecycled();
         int color = hasValidIcon ? UiUtils.getColor(mUrlIcon, false) : Color.TRANSPARENT;
         if (color == Color.TRANSPARENT) {
@@ -606,6 +619,7 @@ public class MainActivity extends WebViewExtActivity implements
         }
     }
 
+    @SuppressWarnings("DEPRECATION")
     private void applyThemeColor(int color) {
         int localColor = color;
         boolean hasValidColor = localColor != Color.TRANSPARENT;
@@ -649,18 +663,40 @@ public class MainActivity extends WebViewExtActivity implements
             }
         }
 
-        int flags = getWindow().getDecorView().getSystemUiVisibility();
-        if (UiUtils.isColorLight(localColor)) {
-            flags |= ( isReachMode && (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ) ?
-                    View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR :
-                    View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-        } else {
-            flags &= ( isReachMode && (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ) ?
-                    ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR :
-                    ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
 
-        getWindow().getDecorView().setSystemUiVisibility(flags);
+            final WindowInsetsController insetsController = this.getWindow().getInsetsController();
+            if (insetsController != null) {
+                if (UiUtils.isColorLight(localColor)) {
+                    if (isReachMode) {
+                        insetsController.setSystemBarsAppearance(WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS,
+                        		WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+                    } else {
+                        insetsController.setSystemBarsAppearance(WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS,
+                        		WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
+                    }
+                } else {
+                    if (isReachMode) {
+                        insetsController.setSystemBarsAppearance(0, WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+                    } else {
+                        insetsController.setSystemBarsAppearance(0, WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
+                    }
+                }
+            }
+        } else {
+            int flags = getWindow().getDecorView().getSystemUiVisibility();
+            if (UiUtils.isColorLight(localColor)) {
+                flags |= ( isReachMode && (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ) ?
+                        View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR :
+                        View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            } else {
+                flags &= ( isReachMode && (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ) ?
+                        ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR :
+                        ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            }
+
+            getWindow().getDecorView().setSystemUiVisibility(flags);
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             setTaskDescription(new TaskDescription(mWebView.getTitle(),
@@ -668,13 +704,25 @@ public class MainActivity extends WebViewExtActivity implements
         }
     }
 
+    @SuppressWarnings("DEPRECATION")
     private void resetSystemUIColor() {
-        int flags = getWindow().getDecorView().getSystemUiVisibility();
-        flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            final WindowInsetsController insetsController = this.getWindow().getInsetsController();
+            if (insetsController != null) {
+                insetsController.setSystemBarsAppearance(0, WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+                insetsController.setSystemBarsAppearance(0, WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
+            }
+        } else {
+            int flags = getWindow().getDecorView().getSystemUiVisibility();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                flags &= ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            }
+            getWindow().getDecorView().setSystemUiVisibility(flags);
         }
-        getWindow().getDecorView().setSystemUiVisibility(flags);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             getWindow().setStatusBarColor(Color.BLACK);
@@ -737,7 +785,7 @@ public class MainActivity extends WebViewExtActivity implements
             launcherIcon = IconCompat.createWithResource(this, R.mipmap.ic_launcher);
         }
 
-        String title = mWebView.getTitle();
+        String title = mWebView.getTitle().toString();
         ShortcutInfoCompat shortcutInfo = new ShortcutInfoCompat.Builder(this, title)
                 .setShortLabel(title)
                 .setIcon(launcherIcon)
@@ -748,19 +796,36 @@ public class MainActivity extends WebViewExtActivity implements
     }
 
     private void setImmersiveMode(boolean enable) {
-        int flags = getWindow().getDecorView().getSystemUiVisibility();
-        int immersiveModeFlags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
-        if (enable) {
-            flags |= immersiveModeFlags;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            this.getWindow().setDecorFitsSystemWindows(!enable);
+            final WindowInsetsController insetsController = this.getWindow().getInsetsController();
+            if (insetsController != null) {
+                int flags = WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars();
+                int behavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE;
+                if (enable) {
+                    insetsController.hide(flags);
+                    insetsController.setSystemBarsBehavior(behavior);
+                } else {
+                    insetsController.show(flags);
+                    behavior = ~behavior;
+                    insetsController.setSystemBarsBehavior(behavior);
+                }
+            }
         } else {
-            flags &= ~immersiveModeFlags;
+            int flags = getWindow().getDecorView().getSystemUiVisibility();
+            int immersiveModeFlags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+            if (enable) {
+                flags |= immersiveModeFlags;
+            } else {
+                flags &= ~immersiveModeFlags;
+            }
+            getWindow().getDecorView().setSystemUiVisibility(flags);
         }
-        getWindow().getDecorView().setSystemUiVisibility(flags);
     }
 
     @Override

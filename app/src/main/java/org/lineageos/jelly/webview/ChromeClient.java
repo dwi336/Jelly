@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 The LineageOS Project
+ * Copyright (C) 2020-2021 The LineageOS Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,20 @@ import android.os.Build;
 import android.os.Message;
 import android.view.View;
 import android.webkit.GeolocationPermissions;
+import android.webkit.MimeTypeMap;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContract;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.activity.result.contract.ActivityResultContracts.OpenMultipleDocuments;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import org.lineageos.jelly.R;
 import org.lineageos.jelly.history.HistoryProvider;
@@ -61,8 +70,11 @@ class ChromeClient extends WebChromeClient {
     @Override
     public void onReceivedTitle(WebView view, String title) {
         mUrlBarController.onTitleReceived(title);
-        if (!mIncognito) {
-            HistoryProvider.addOrUpdateItem(mActivity.getContentResolver(), title, view.getUrl());
+        String it = view.getUrl();
+        if (it != null) {
+            if (!mIncognito) {
+                HistoryProvider.addOrUpdateItem(mActivity.getContentResolver(), title, it);
+            }
         }
     }
 
@@ -86,13 +98,38 @@ class ChromeClient extends WebChromeClient {
     @Override
     public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> path,
                                      FileChooserParams params) {
-        Intent intent = params.createIntent();
-        try {
-            mActivity.startActivity(intent);
-        } catch (ActivityNotFoundException e) {
-            Toast.makeText(mActivity, mActivity.getString(R.string.error_no_activity_found),
-                    Toast.LENGTH_LONG).show();
-            return false;
+        ActivityResultLauncher<String[]> getContent = mActivity.registerForActivityResult((ActivityResultContract<String[], List<Uri>>) new ActivityResultContracts.OpenMultipleDocuments(), new ActivityResultCallback<List<Uri>>() {
+            @Override
+            public void onActivityResult(List <Uri> value) {
+                if (value != null) {
+                    if(path != null){
+                        Uri[] it = new Uri[value.size()];
+                        it = value.toArray(it);
+
+                        path.onReceiveValue(it);
+                    }
+                }
+            }
+        });
+
+        if (getContent != null) {
+            try {
+                final String[] acceptTypes = params.getAcceptTypes();
+                if (acceptTypes != null) {
+                    final ArrayList<String> list = new ArrayList<String>(acceptTypes.length);
+                    for (int i = 0; i < acceptTypes.length; i++) {
+                        list.add(MimeTypeMap.getSingleton().getMimeTypeFromExtension(acceptTypes[i]));
+                    }
+                    final String[] mimeTypes = list.toArray(new String[0]);
+                    if (mimeTypes != null) {
+                        getContent.launch(mimeTypes);
+                    }
+                }
+            } catch (ActivityNotFoundException e) {
+                Toast.makeText(mActivity, mActivity.getString(R.string.error_no_activity_found),
+                        Toast.LENGTH_LONG).show();
+                return false;
+            }
         }
         return true;
     }

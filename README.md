@@ -6,9 +6,10 @@ Copied from https://github.com/LineageOS/android_packages_apps_Jelly/archive/lin
 
 Made small compatibility changes for android version >19
 
-Moved to lineage-17.1 branch.
-Merged with upstream project on 22.06.2020
+Moved to lineage-18.1 branch.
+Merged with upstream project on 19.05.2021
 Port Kotlin changes to Java
+AsyncTask migration to coroutines omitted 
 
 Feedback welcome
 

@@ -61,6 +61,11 @@ public class SearchBarController implements
         mCancelButton.setOnClickListener(this);
     }
 
+    private String getQuery() {
+        Editable s = mEditor.getText();
+        return s != null ? s.toString() : null;
+    }
+
     public void onShow() {
         mEditor.requestFocus();
         UiUtils.showKeyboard(mEditor);
@@ -154,11 +159,6 @@ public class SearchBarController implements
         } else {
             mStatus.setText(null);
         }
-    }
-
-    private String getQuery() {
-        Editable s = mEditor.getText();
-        return s != null ? s.toString() : null;
     }
 
     public interface OnCancelListener {

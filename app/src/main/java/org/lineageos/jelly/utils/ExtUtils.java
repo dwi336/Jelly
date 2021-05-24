@@ -19,7 +19,7 @@ import android.content.ContentProvider;
 import android.content.Context;
 
 public final class ExtUtils {
-    public static final Context requireContext(ContentProvider contentProvider) {
+    public static final Context requireContextExt(ContentProvider contentProvider) {
         if (contentProvider == null) throw new IllegalStateException();
         return contentProvider.getContext();
     }

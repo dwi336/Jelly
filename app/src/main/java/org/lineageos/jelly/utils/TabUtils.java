@@ -18,6 +18,7 @@ package org.lineageos.jelly.utils;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 
 import org.lineageos.jelly.MainActivity;
 
@@ -27,7 +28,11 @@ public final class TabUtils {
         if (url != null && !url.isEmpty()) {
             intent.setData(Uri.parse(url));
         }
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP){
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+        } else{
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+        }
         intent.putExtra(IntentUtils.EXTRA_INCOGNITO, incognito);
         context.startActivity(intent);
     }

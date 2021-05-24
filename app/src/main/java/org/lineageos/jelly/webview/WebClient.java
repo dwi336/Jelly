@@ -40,6 +40,7 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.webkit.WebResourceRequestCompat;
+import androidx.webkit.WebViewFeature;
 
 import com.google.android.material.snackbar.Snackbar;
 
@@ -101,7 +102,7 @@ class WebClient extends WebViewClient {
 
             if (!webViewExt.isIncognito()
                     && needsLookup
-                    && !WebResourceRequestCompat.isRedirect(request)
+                    && !(WebViewFeature.isFeatureSupported(WebViewFeature.WEB_RESOURCE_REQUEST_IS_REDIRECT) && WebResourceRequestCompat.isRedirect(request))
                     && startActivityForUrl(view, url)) {
                 return true;
             } else if (!webViewExt.getRequestHeaders().isEmpty()) {
@@ -230,7 +231,11 @@ class WebClient extends WebViewClient {
         Intent chooserIntent = Intent.createChooser(lastIntent, null);
         chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS,
                 chooserIntents.toArray(new Intent[chooserIntents.size()]));
-        chooserIntent.putExtra(Intent.EXTRA_CHOOSER_REFINEMENT_INTENT_SENDER, pi.getIntentSender());
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            chooserIntent.putExtra("android.intent.extra.CHOOSER_REFINEMENT_INTENT_SENDER", pi.getIntentSender());
+        } else {
+            chooserIntent.putExtra(Intent.EXTRA_CHOOSER_REFINEMENT_INTENT_SENDER, pi.getIntentSender());
+        }
         return chooserIntent;
     }
 }
