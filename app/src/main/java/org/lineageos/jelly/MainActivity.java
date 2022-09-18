@@ -807,7 +807,7 @@ public class MainActivity extends WebViewExtActivity implements
                     insetsController.setSystemBarsBehavior(behavior);
                 } else {
                     insetsController.show(flags);
-                    behavior = ~behavior;
+                    behavior = -behavior - 1; // unary complement operator "~" or "^ (-1)" throw lint error
                     insetsController.setSystemBarsBehavior(behavior);
                 }
             }

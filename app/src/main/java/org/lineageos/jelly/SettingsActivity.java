@@ -33,6 +33,7 @@ import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
+import androidx.preference.SwitchPreference;
 import org.lineageos.jelly.utils.PrefsUtils;
 
 public class SettingsActivity extends AppCompatActivity {
@@ -62,10 +63,17 @@ public class SettingsActivity extends AppCompatActivity {
             // Load the preferences from an XML resource
             setPreferencesFromResource(R.xml.settings, rootKey);
 
-            bindPreferenceSummaryToValue(findPreference("key_home_page"),
-                    getString(R.string.default_home_page));
+            Preference homepagePreference = findPreference("key_home_page");
+            if (homepagePreference != null) {
+                bindPreferenceSummaryToValue(homepagePreference,
+                        getString(R.string.default_home_page));
+            }
+            
             if (getResources().getBoolean(R.bool.is_tablet)) {
-                getPreferenceScreen().removePreference(findPreference("key_reach_mode"));
+                SwitchPreference reachModePreference = this.findPreference("key_reach_mode");
+                if (reachModePreference != null) {
+                    getPreferenceScreen().removePreference(reachModePreference);
+                }
             }
         }
 
@@ -81,7 +89,7 @@ public class SettingsActivity extends AppCompatActivity {
 
         @Override
         public boolean onPreferenceChange(Preference preference, Object value) {
-            String stringValue = value.toString();
+            String stringValue = String.valueOf(value);
             if (preference instanceof ListPreference) {
                 int prefIndex = ((ListPreference)preference).findIndexOfValue(stringValue);
                 if (prefIndex >= 0) {

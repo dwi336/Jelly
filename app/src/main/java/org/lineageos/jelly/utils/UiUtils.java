@@ -99,7 +99,7 @@ public final class UiUtils {
      */
     public static void showKeyboard(View view) {
         InputMethodManager imm = ContextCompat.getSystemService(view.getContext(), InputMethodManager.class);
-        imm.toggleSoftInputFromWindow(view.getWindowToken(), 0, 0);
+        imm.showSoftInput(view, 0);
     }
 
     /**

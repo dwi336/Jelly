@@ -29,6 +29,7 @@
     <string name="menu_desktop_mode">Cambiar a la versión de escritorio</string>
     <string name="menu_mobile_mode">Cambiar a la versión móvil</string>
     <string name="menu_search">Encontrar en la página</string>
+    <string name="menu_print">Imprimir</string>
     <string name="share_title">Enviar a</string>
     <string name="dismiss">Descartar</string>
     <string name="download_title">Descargar archivo</string>
@@ -60,6 +61,8 @@
     <string name="pref_do_not_track_title">No rastrear</string>
     <string name="pref_do_not_track_summary">Envía una solicitud para evitar el rastreo en los sitios web que visite</string>
     <string name="pref_suggestions_provider">Proveedor de sugerencias</string>
+    <string name="pref_reach_mode_title">Modo simplificado</string>
+    <string name="pref_reach_mode_summary">Cambiar los elementos de la interfaz para un uso más fácil con una sola mano</string>
     <string name="history_title">Historial</string>
     <string name="history_empty">Nada por aquí, navegue por Internet para ver en esta pestaña su historial</string>
     <string name="history_date_format">EEEE dd MMMM yyyy, HH:mm</string>

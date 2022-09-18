@@ -29,6 +29,6 @@ class BaiduSuggestionProvider extends SuggestionProvider {
     @NonNull
     protected String createQueryUrl(@NonNull String query,
                                     @NonNull String language) {
-        return "http://suggestion.baidu.com/s?ie=UTF-8&wd=" + query + "&action=opensearch";
+        return "http://suggestion.baidu.com/su?ie=UTF-8&wd=" + query + "&action=opensearch";
     }
 }

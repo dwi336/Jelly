@@ -1,13 +1,16 @@
-apply plugin: 'com.android.application'
+plugins {
+    id 'com.android.application'
+}
 
 android {
-    compileSdkVersion 30
-    buildToolsVersion '30.0.3'
-
+    compileSdkVersion 33
+    buildToolsVersion '33.0.0'
+    namespace 'org.lineageos.jelly'
+    
     defaultConfig {
         applicationId "org.lineageos.jelly"
         minSdkVersion 19
-        targetSdkVersion 30
+        targetSdkVersion 33
         versionCode 1
         versionName "1.0"
     }
@@ -30,26 +33,27 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
-
-    lintOptions {
-        disable 'RestrictedApi'
-        disable 'MissingTranslation'
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 
     sourceSets {
         main.java.srcDirs += 'src/main/java_studio'
     }
+
+    lint {
+        disable 'RestrictedApi'
+        disable 'MissingTranslation'
+        disable 'ResourceType'
+    }
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'androidx.appcompat:appcompat:1.3.0-alpha02'
+    implementation 'androidx.appcompat:appcompat:1.5.1'
     implementation 'androidx.preference:preference:1.1.1'
-    implementation 'com.google.android.material:material:1.3.0'
+    implementation 'com.google.android.material:material:1.6.1'
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'androidx.palette:palette:1.0.0'
-    implementation 'androidx.webkit:webkit:1.4.0'
+    implementation 'androidx.webkit:webkit:1.5.0'
 }
