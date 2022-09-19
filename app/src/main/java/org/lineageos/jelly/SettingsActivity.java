@@ -33,7 +33,7 @@ import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
-import androidx.preference.SwitchPreference;
+import androidx.preference.SwitchPreferenceCompat;
 import org.lineageos.jelly.utils.PrefsUtils;
 
 public class SettingsActivity extends AppCompatActivity {
@@ -70,7 +70,7 @@ public class SettingsActivity extends AppCompatActivity {
             }
             
             if (getResources().getBoolean(R.bool.is_tablet)) {
-                SwitchPreference reachModePreference = this.findPreference("key_reach_mode");
+                SwitchPreferenceCompat reachModePreference = this.findPreference("key_reach_mode");
                 if (reachModePreference != null) {
                     getPreferenceScreen().removePreference(reachModePreference);
                 }
